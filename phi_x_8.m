@@ -1,0 +1,60 @@
+% 定义采样范围为0到1的128个均匀采样点
+% Define 128 uniformly sampled points in the range 0 to 1
+samples = linspace(0, 1, 128);
+
+% 计算输入x，范围从0到65535，对应16位无符号整数
+% Calculate input x, range from 0 to 65535, corresponding to 16-bit unsigned integer
+x = samples * 128;
+
+% 使用给定公式计算y
+% Calculate y using the given formula
+y = -log(tanh(abs(samples / 2)));
+
+
+% 绘制函数图像
+% Plot the function
+figure;
+plot(samples, y);
+title('y = -log(tanh(x/2))');
+xlabel('x ');
+ylabel('y');
+grid on;
+
+% 检查并处理复数和无穷大值
+% Check and handle complex and infinite values
+y = abs(y); % 取模 % Take absolute value to remove imaginary part
+y(isinf(y)) = 0; % 将无穷大值替换为0 % Replace infinite values with 0
+
+% 计算所有y值的平均值
+% Calculate the average value of all y values
+y_mean = mean(y);
+
+% 将每个y值除以平均值，然后乘以2^7
+% Divide each y value by the mean and then multiply by 2^7
+y_normalized = (y / y_mean) * (2^7);
+
+% 将结果转换为二进制表示，截取低8位
+% Convert the result to binary and take the lower 8 bits
+y_binary7 = arrayfun(@(num) dec2bin(mod(round(num), 128), 8), y_normalized, 'UniformOutput', false);
+
+% 在7位二进制字符串前面补充9个零，转换为16位二进制补码
+% Pad 7-bit binary strings with 9 zeros to convert to 16-bit two's complement
+%y_twoscomp16 = cellfun( y_binary7, 'UniformOutput', false);
+
+% 将x值转换为16位无符号二进制表示
+% Convert x values to 16-bit unsigned binary representation
+x_binary16 = arrayfun(@(num) dec2bin(num, 8), round(x), 'UniformOutput', false);
+
+% 打开文件以写入输出
+% Open a file to write the output
+fileID = fopen('out.txt', 'w');
+
+% 写入结果
+% Write the results
+for i = 1:length(x)
+    fprintf(fileID, '8''b%s : phi_x = 8''b%s;\n', x_binary16{i}, y_binary7{i});
+end
+
+% 关闭文件
+% Close the file
+fclose(fileID);
